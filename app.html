@@ -1,0 +1,326 @@
+<title>QAZAQ MATH</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="QAZAQ MATH: Қазақстанды математикамен танимыз — 3D интерактивті цифрлық платформа">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%230f1b3d%27/%3E%3Ctext x=%2732%27 y=%2744%27 text-anchor=%27middle%27 font-size=%2736%27 font-weight=%27800%27 fill=%27%23f0b432%27 font-family=%27serif%27%3E%CF%80%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,600;1,500;1,600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<canvas id="gl" aria-label="Қазақстанның 3D картасы"></canvas>
+<div id="labels" aria-hidden="true"></div>
+
+<!-- ============ HEADER ============ -->
+<header class="topbar">
+  <a class="brand" href="#home" aria-label="QAZAQ MATH басты бет">
+    <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6d27a"/><stop offset="1" stop-color="#c8963e"/></linearGradient></defs>
+      <rect x="2" y="2" width="60" height="60" rx="16" fill="#0f1b3d"/>
+      <circle cx="32" cy="32" r="19" fill="none" stroke="url(#gg)" stroke-width="2.4"/>
+      <path d="M32 13v38M13 32h38M18.6 18.6l26.8 26.8M45.4 18.6 18.6 45.4" stroke="url(#gg)" stroke-width="1.6" opacity=".7"/>
+      <circle cx="32" cy="32" r="7" fill="#0f1b3d" stroke="url(#gg)" stroke-width="2.4"/>
+    </svg>
+    <span class="brand-text"><b>QAZAQ <i>MATH</i></b><small>Қазақстанды математикамен танимыз</small></span>
+  </a>
+  <nav class="mainnav" aria-label="Бөлімдер">
+    <a href="#home" data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z"/></svg><span>Басты</span></a>
+    <a href="#map" data-nav="map"><svg viewBox="0 0 24 24"><path d="M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2zm0 2 6 2v12l-6-2V5z"/></svg><span>3D карта</span></a>
+    <a href="#lab" data-nav="lab"><svg viewBox="0 0 24 24"><path d="M9 2h6v2h-1v5l6 10a2 2 0 0 1-2 3H6a2 2 0 0 1-2-3l6-10V4H9z"/></svg><span>Зертхана</span></a>
+    <a href="#quests" data-nav="quests"><svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 .9-5 4.8 1.3 7L12 17.8 5.7 21.2 7 14.2 2 9.4l7-.9z"/></svg><span>Әлемдер</span></a>
+    <a href="#adal" data-nav="adal"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4z"/></svg><span>Адал азамат</span></a>
+    <a href="#idea" data-nav="idea"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-4 12.7V18h8v-3.3A7 7 0 0 0 12 2zM9 20h6v2H9z"/></svg><span>Пед. идея</span></a>
+    <a href="#author" data-nav="author"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm-9 10c0-5 4-8 9-8s9 3 9 8z"/></svg><span>Автор</span></a>
+    <a href="#cabinet" data-nav="cabinet"><svg viewBox="0 0 24 24"><path d="M4 3h12l4 4v14H4zm3 6h10v2H7zm0 4h10v2H7zm0 4h6v2H7z"/></svg><span>Кабинет</span></a>
+    <a href="#teacher" data-nav="teacher"><svg viewBox="0 0 24 24"><path d="M3 3h18v4H3zm0 6h8v12H3zm10 0h8v5h-8zm0 7h8v5h-8z"/></svg><span>Мұғалім</span></a>
+  </nav>
+  <div class="top-right">
+    <button class="icon-btn" id="btnMute" title="Дыбысты қосу/өшіру" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg></button>
+    <button class="user-chip" id="userChip" title="Профиль">
+      <span class="avatar-dot" id="chipAvatar"></span>
+      <span class="uc-text"><b id="chipName">Кіру</b><small id="chipClass">Тіркелу</small></span>
+    </button>
+  </div>
+</header>
+
+<div class="online-pill" id="onlinePill"><span class="live-dot"></span> Онлайн: <b id="onlineCount">1</b> <small id="syncMode">· бір құрылғы</small></div>
+
+<!-- ============ HOME ============ -->
+<section class="view" id="view-home" data-view="home">
+  <div class="home-wrap">
+    <div class="hero card">
+      <p class="eyebrow">3D симулятор · аудиогид · 1–11 сынып</p>
+      <h1 class="hero-title">Қазақстанды <em>математикамен</em> танимыз</h1>
+      <p class="hero-lead">Сәйгүлік атқа мін немесе қыран бүркітпен ұш. Әр қала мен ескерткіш — математикалық әлемге ашылатын портал: қақпаны аш, формула кітабын ал, симулятормен зертте.</p>
+      <div class="hero-cta">
+        <button class="btn-primary big" id="btnStart"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Саяхатты бастау</button>
+        <button class="btn-soft big" data-go="lab">Зертхана</button>
+      </div>
+      <dl class="hero-stats">
+        <div><dt>18</dt><dd>виртуалды әлем</dd></div>
+        <div><dt>54</dt><dd>формула кітабы</dd></div>
+        <div><dt>18</dt><dd>симулятор</dd></div>
+        <div><dt>12</dt><dd>«Адал азамат» жағдаяты</dd></div>
+      </dl>
+    </div>
+    <aside class="home-side">
+      <div class="card fact-card">
+        <p class="eyebrow">Қызықты факт</p>
+        <p id="factText" class="fact-text">Қазақстан аумағы <b>2 724 900 км²</b>, яғни жер шарындағы ең үлкен 9-мемлекет!</p>
+        <button class="link-btn" id="btnNextFact">Келесі факт →</button>
+      </div>
+      <div class="card qr-card">
+        <div class="qr-box" id="qrSmall" aria-label="Платформаға кіру QR-коды"></div>
+        <div><p class="eyebrow">QR арқылы кір</p><p class="qr-txt">Телефонмен сканерле — тіркел немесе логинмен кір.</p><button class="link-btn" id="btnQrBig" type="button">Экранға үлкейту →</button></div>
+      </div>
+      <div class="card rating-card">
+        <div class="cr-head"><p class="eyebrow">Рейтинг</p><small>ұпай бойынша</small></div>
+        <ol id="ratingList" class="rating-list"></ol>
+      </div>
+    </aside>
+  </div>
+  <nav class="home-cards" aria-label="Жылдам өту">
+    <a class="hcard" href="#map"><span class="hc-ico i-map"></span><span><b>3D карта</b><small>Атпен және бүркітпен саяхат</small></span></a>
+    <a class="hcard" href="#quests"><span class="hc-ico i-quest"></span><span><b>Порталдар</b><small>Қақпа · кітап · симулятор</small></span></a>
+    <a class="hcard" href="#lab"><span class="hc-ico i-lab"></span><span><b>Зертхана</b><small>Асық, бәліш, арқан тартыс</small></span></a>
+    <a class="hcard" href="#adal"><span class="hc-ico i-adal"></span><span><b>Адал азамат</b><small>Құндылық + есеп</small></span></a>
+    <a class="hcard" href="#cabinet"><span class="hc-ico i-cab"></span><span><b>Кабинет</b><small>Кітапхана мен жетістік</small></span></a>
+  </nav>
+</section>
+
+<!-- ============ MAP HUD ============ -->
+<section class="view hud" id="view-map" data-view="map" hidden>
+  <div class="mount-switch hud-card" role="group" aria-label="Көлік таңдау">
+    <button data-mount="horse" class="on"><svg viewBox="0 0 24 24"><path d="M5 20l1-6-3-3 3-6 4 1 3-3 1 4 4 2 3 5-2 1-3-2-2 3 1 4h-2l-2-4H9l-2 4z"/></svg>Ат</button>
+    <button data-mount="eagle"><svg viewBox="0 0 24 24"><path d="M2 9c4-1 6 0 8 2l2-3 2 3c2-2 4-3 8-2-3 2-5 4-6 7l-2 1 1 4-3-2-3 2 1-4-2-1C7 13 5 11 2 9z"/></svg>Бүркіт</button>
+    <button data-mount="orbit"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 2a6 6 0 0 1 5.6 3.9L13 12l-1 5.9A6 6 0 0 1 12 6z"/></svg>Шолу</button>
+  </div>
+
+  <div class="instruments hud-card" id="instruments">
+    <div class="gauge"><span class="g-lab">Жылдамдық</span><b id="hSpeed">0</b><small id="hBoost">км/сағ</small></div>
+    <div class="gauge"><span class="g-lab">Биіктік</span><b id="hAlt">0</b><small>м</small></div>
+    <div class="gauge"><span class="g-lab">Жол</span><b id="hDist">0</b><small>км</small></div>
+    <div class="gauge"><span class="g-lab">Уақыт</span><b id="hTime">0:00</b><small>сағ : мин</small></div>
+    <div class="gauge compass"><span class="g-lab">Бағыт</span><div class="rose"><i id="hNeedle"></i><span>С</span></div><small id="hHead">0°</small></div>
+  </div>
+
+  <div class="formula hud-card" id="formulaBar"><span class="f-lab">Тірі формула</span><code id="formulaText">s = v · t</code></div>
+
+  <div class="nearest hud-card" id="nearestBox">
+    <span class="g-lab">Ең жақын нысан</span>
+    <b id="nearName">—</b>
+    <small id="nearInfo">—</small>
+    <button class="btn-primary sm" id="btnEnter" hidden>Порталға кіру <kbd>E</kbd></button>
+  </div>
+
+  <div class="minimap hud-card"><canvas id="minimap" width="220" height="130"></canvas></div>
+
+  <div class="help hud-card" id="helpBox">
+    <b>Басқару</b>
+    <span><kbd>W</kbd><kbd>S</kbd> жылдамдық · <kbd>A</kbd><kbd>D</kbd> бұрылу · <kbd>Shift</kbd> үдеу</span>
+    <span><kbd>W</kbd> жиі басу — жылдамдық артады</span><span class="eagle-only"><kbd>Space</kbd> жоғары · <kbd>C</kbd> төмен · <kbd>W</kbd> жібер — қалықтау</span>
+    <span>Тышқан: камера · белгіні басу: ақпарат</span>
+  </div>
+
+  <div class="touch" id="touchPad">
+    <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
+    <div class="ud"><button id="tUp" aria-label="Жоғары">▲</button><button id="tDown" aria-label="Төмен">▼</button><button id="tE" aria-label="Порталға кіру">E</button></div>
+  </div>
+</section>
+
+<!-- ============ WORLD HUD ============ -->
+<section class="view hud" id="view-world" data-view="world" hidden>
+  <div class="world-top hud-card">
+    <div class="wt-main"><span class="g-lab">Виртуалды әлем</span><b id="wTitle">—</b></div>
+    <div class="w-stars" id="wStars"></div>
+    <div class="w-value"><span class="g-lab">Адал азамат</span><b id="wValue">—</b></div>
+    <button class="btn-soft sm" id="btnExitWorld">Картаға оралу</button>
+  </div>
+  <div class="w-peers" id="wPeers" hidden></div>
+  <div class="world-tools hud-card" role="toolbar" aria-label="Әлем құралдары">
+    <button type="button" id="btnTrailer"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zm6 3v8l6-4z"/></svg>Бейне-трейлер</button>
+    <button type="button" id="btnOrbit"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-1.8-4.3L14 10h6V4l-2.3 2.3A8 8 0 0 0 12 4z"/></svg>360° шолу</button>
+    <button type="button" id="btnLookUp"><svg viewBox="0 0 24 24"><path d="M12 4l7 8h-4v8H9v-8H5z"/></svg>Жоғары қарау</button>
+    <button type="button" id="btnLabels"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h10v2H4zm0 5h16v2H4z"/></svg>Жазулар</button>
+  </div>
+  <div class="mount-switch hud-card w-mount" role="group" aria-label="Әлемдегі көлік">
+    <button data-wmount="horse" class="on"><svg viewBox="0 0 24 24"><path d="M5 20l1-6-3-3 3-6 4 1 3-3 1 4 4 2 3 5-2 1-3-2-2 3 1 4h-2l-2-4H9l-2 4z"/></svg>Ат</button>
+    <button data-wmount="eagle"><svg viewBox="0 0 24 24"><path d="M2 9c4-1 6 0 8 2l2-3 2 3c2-2 4-3 8-2-3 2-5 4-6 7l-2 1 1 4-3-2-3 2 1-4-2-1C7 13 5 11 2 9z"/></svg>Бүркіт</button>
+  </div>
+  <div class="world-guide hud-card" id="worldGuide">
+    <b>Әлемдегі міндеттер</b>
+    <ol>
+      <li><i class="dot gold"></i><span>3 қақпадағы есепті шеш — есік ашылып, <b>формула кітабы</b> сыйға беріледі</span></li>
+      <li><i class="dot teal"></i><span>Оң жақтағы <b>симулятор</b> станциясында тәжірибе жаса</span></li>
+      <li><i class="dot navy"></i><span>Сол жақтағы <b>математикалық паспортты</b> оқы, сызғыш пен транспортирге қара</span></li>
+    </ol>
+  </div>
+  <div class="nearest hud-card" id="wPrompt" hidden><b id="wPromptText">Есепті ашу</b><button class="btn-primary sm" id="btnWorldAct">Ашу <kbd>E</kbd></button></div>
+  <div class="launch-hud hud-card" id="launchHud" hidden><span class="g-lab">Зымыран ұшырылуда</span><b id="lhBig">3</b><div class="lh-row"><span>t <b id="lhT">0</b> с</span><span>v <b id="lhV">0</b> м/с</span><span>h <b id="lhH">0</b> м</span><span>a <b id="lhA">0</b> м/с²</span></div></div>
+  <div class="help hud-card"><b>Басқару</b><span><kbd>W</kbd><kbd>S</kbd> алға/артқа · <kbd>A</kbd><kbd>D</kbd> бұрылу · <kbd>E</kbd> әрекет</span><span><kbd>W</kbd> жиі басу — жылдамырақ · <kbd>Shift</kbd> үдеу</span><span>Бүркіт: <kbd>Space</kbd> жоғары · <kbd>C</kbd> төмен · <kbd>W</kbd> жібер — бір орында қалықтайды</span></div>
+  <div class="touch" id="touchPad2">
+    <div class="joy" id="joy2"><div class="knob" id="knob2"></div></div>
+    <div class="ud"><button id="tE2" aria-label="Әрекет">E</button></div>
+  </div>
+</section>
+
+<!-- ============ CONTENT PAGES ============ -->
+<section class="view page" id="view-lab" data-view="lab" hidden>
+  <div class="page-inner wide">
+    <header class="page-head"><p class="eyebrow">1–11 сынып · таңдамалы тақырыптар</p><h2>Математикалық зертхана</h2><p class="lead">Асық, бәліш, арқан тартыс, киіз үй мен Бәйтерек — математиканы өз мәдениетіміз арқылы зерттейміз.</p></header>
+    <div class="lab-layout">
+      <nav class="lab-list" id="labTabs" role="tablist" aria-label="Модульдер"></nav>
+      <div class="lab-stage" id="labStage"></div>
+    </div>
+  </div>
+</section>
+
+<section class="view page" id="view-quests" data-view="quests" hidden>
+  <div class="page-inner wide">
+    <header class="page-head"><p class="eyebrow">Порталдар · 3D әлемдер</p><h2>Виртуалды әлемдер</h2><p class="lead">Әр әлемде: үш қақпа (әрқайсысы — формула кітабы), бір симулятор және нысанның математикалық паспорты. Порталға тікелей осы жерден кір.</p></header>
+    <div class="quest-grid" id="questGrid"></div>
+  </div>
+</section>
+
+<section class="view page" id="view-adal" data-view="adal" hidden>
+  <div class="page-inner wide" id="adalPage"></div>
+</section>
+
+<section class="view page" id="view-idea" data-view="idea" hidden>
+  <div class="page-inner prose" id="ideaPage"></div>
+</section>
+
+<section class="view page" id="view-author" data-view="author" hidden>
+  <div class="page-inner" id="authorPage"></div>
+</section>
+
+<section class="view page" id="view-cabinet" data-view="cabinet" hidden>
+  <div class="page-inner wide" id="cabinetPage"></div>
+</section>
+
+<section class="view page" id="view-teacher" data-view="teacher" hidden>
+  <div class="page-inner wide" id="teacherPage"></div>
+</section>
+
+<!-- ============ OVERLAYS ============ -->
+<div class="subtitle" id="subtitle" hidden><button class="sub-x" id="subClose" aria-label="Жабу">×</button><span id="subText"></span></div>
+<div class="toast" id="toast" hidden></div>
+
+<div class="modal" id="placeModal" hidden>
+  <div class="modal-card place" role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+    <button class="modal-x" data-close aria-label="Жабу">×</button>
+    <p class="eyebrow" id="pmKind">Нысан</p>
+    <h3 id="pmTitle">—</h3>
+    <p id="pmInfo" class="pm-info"></p>
+    <div class="pm-math" id="pmMath"></div>
+    <dl class="facts" id="pmFacts"></dl>
+    <div class="sci" id="pmSci" hidden></div>
+    <div class="modal-actions">
+      <button class="btn-soft" id="pmListen">Тыңдау</button>
+      <button class="btn-primary" id="pmEnter">Порталға кіру</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="taskModal" hidden>
+  <div class="modal-card task" role="dialog" aria-modal="true" aria-labelledby="tmTitle">
+    <button class="modal-x" data-close aria-label="Жабу">×</button>
+    <div class="tm-chips"><span class="chip" id="tmSubj">Геометрия</span><span class="chip ghost" id="tmGrade">8 сынып</span><span class="chip ghost" id="tmNum">Қақпа 1</span></div>
+    <h3 id="tmTitle">Есікті ашу үшін есепті шеш</h3>
+    <p class="tm-reward" id="tmReward">Сыйлық: формула кітабы</p>
+    <p class="tm-q" id="tmQ"></p>
+    <form id="tmForm" class="tm-form" autocomplete="off">
+      <label for="tmAns">Жауабың</label>
+      <div class="tm-row"><input id="tmAns" inputmode="decimal" placeholder="Мысалы: 121"><span id="tmUnit"></span><button class="btn-primary" type="submit">Тексеру</button></div>
+    </form>
+    <div class="tm-feedback" id="tmFb" hidden></div>
+    <div class="modal-actions">
+      <button class="btn-soft" id="tmListen">Тыңдау</button>
+      <button class="btn-soft" id="tmHint">Кеңес (−2 ұпай)</button>
+    </div>
+    <p class="honest">Адал азамат: есепті өзің шеш, көшірме. Қателесу — үйренудің бір бөлігі.</p>
+  </div>
+</div>
+
+<div class="modal book-modal" id="bookModal" hidden>
+  <div class="modal-card book" role="dialog" aria-modal="true" aria-labelledby="bkTitle">
+    <button class="modal-x" data-close aria-label="Жабу">×</button>
+    <div class="bk-head"><p class="eyebrow" id="bkKind">Сыйлық · формула кітабы</p><h3 id="bkTitle">—</h3><p class="bk-formula" id="bkFormula"></p></div>
+    <canvas id="bookCanvas" aria-label="3D формула кітабы"></canvas>
+    <p class="bk-hint">Кітапты тышқанмен айналдыр · дөңгелекшемен жақында. Кітап «Кабинет → Кітапхана» бөлімінде сақталды.</p>
+  </div>
+</div>
+
+<div class="modal trailer-modal" id="trailerModal" hidden>
+  <div class="modal-card trailer" role="dialog" aria-modal="true" aria-labelledby="trTitle">
+    <button class="modal-x" data-close aria-label="Жабу">×</button>
+    <div class="tr-head"><p class="eyebrow" id="trKind">Бейне-трейлер · сабақ тақырыбы</p><h3 id="trTitle">—</h3></div>
+    <div id="trRoot" class="tr-root"></div>
+    <div class="modal-actions"><button class="btn-primary" data-close id="trGo">Әлемге кіру</button></div>
+  </div>
+</div>
+
+<div class="modal" id="qrModal" hidden>
+  <div class="modal-card qr-modal" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+    <button class="modal-x" data-close aria-label="Жабу">×</button>
+    <p class="eyebrow">QAZAQ MATH · сыныпқа кіру</p>
+    <h3 id="qrTitle">Телефонмен сканерлеп, кір!</h3>
+    <div class="qr-big" id="qrBig"></div>
+    <p class="qr-url" id="qrUrl"></p>
+    <ol class="qr-steps"><li>Камераны QR-кодқа бағытта</li><li>«Тіркелу» немесе «Кіру» бетін аш</li><li>Логин мен құпиясөзді енгіз — саяхат басталады!</li></ol>
+  </div>
+</div>
+
+<div class="modal sim-modal" id="simModal" hidden>
+  <div class="modal-card sim" role="dialog" aria-modal="true" aria-label="Симулятор">
+    <button class="modal-x" data-close aria-label="Жабу">×</button>
+    <div id="simRoot"></div>
+  </div>
+</div>
+
+<div class="modal" id="regModal" hidden>
+  <div class="modal-card reg" role="dialog" aria-modal="true" aria-labelledby="regTitle">
+    <button class="modal-x" data-close aria-label="Жабу">×</button>
+    <p class="eyebrow">Саяхатшы паспорты</p>
+    <h3 id="regTitle">QAZAQ MATH-қа кіру</h3>
+    <div class="auth-tabs" role="tablist"><button type="button" class="on" data-tab="login">Оқушы кіруі</button><button type="button" data-tab="register">Тіркелу</button><button type="button" data-tab="teacher">Мұғалім</button></div>
+    <form id="loginForm" class="reg-form auth-pane" data-pane="login" autocomplete="on">
+      <label>Логин <input id="lLogin" required autocomplete="username" placeholder="мысалы: alikhan.sarsenov" autocapitalize="off"></label>
+      <label>Құпиясөз <input id="lPass" type="password" required autocomplete="current-password"></label>
+      <p class="auth-err" id="lErr"></p>
+      <div class="modal-actions"><button class="btn-primary big" type="submit">Кіру</button></div>
+      <p class="auth-note">Логин мен құпиясөзді мұғалімнен аласың немесе «Тіркелу» бетінде өзің ашасың.</p>
+    </form>
+    <form id="regForm" class="reg-form auth-pane" data-pane="register" autocomplete="off" hidden>
+      <div class="reg-row">
+        <label>Аты <input id="rFirst" required maxlength="20" placeholder="Әлихан"></label>
+        <label>Тегі <input id="rLast" required maxlength="24" placeholder="Сәрсенов"></label>
+        <label class="sm">Сынып
+          <select id="rGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option selected>7</option><option>8</option><option>9</option><option>10</option><option>11</option></select>
+        </label>
+        <label class="sm">Әрпі <select id="rLetter"><option>А</option><option>Ә</option><option>Б</option><option>В</option><option>Г</option><option>Д</option></select></label>
+      </div>
+      <div class="reg-row two"><label>Логин (латынша) <input id="rLogin" required maxlength="24" autocapitalize="off" placeholder="alikhan.sarsenov"></label><label>Құпиясөз (кемінде 4 таңба) <input id="rPass" type="password" required minlength="4" autocomplete="new-password"></label></div>
+      <fieldset><legend>Кейіпкерің</legend><div class="chars" id="rChars"></div></fieldset>
+      <fieldset><legend>Тақия мен ер-тоқымның түсі</legend><div class="swatches" id="rColors"></div></fieldset>
+      <p class="auth-err" id="rErr"></p>
+      <div class="modal-actions"><button class="btn-primary big" type="submit">Тіркеліп, саяхатқа аттану</button></div>
+    </form>
+    <form id="teacherForm" class="reg-form auth-pane" data-pane="teacher" autocomplete="on" hidden>
+      <label>Мұғалім логині <input id="tLogin" required autocomplete="username" autocapitalize="off"></label>
+      <label>Құпиясөз <input id="tPass" type="password" required autocomplete="current-password"></label>
+      <p class="auth-err" id="tErr"></p>
+      <div class="modal-actions"><button class="btn-primary big" type="submit">Мұғалім кабинетіне кіру</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="portal-fx" id="portalFx" hidden><div class="pf-ring"></div><div class="pf-text" id="pfText">Портал ашылуда…</div></div>
+<div class="loader" id="loader"><div class="ld-ring"></div><p>3D әлем жүктелуде…</p></div>
+
+<script type="module" src="js/app.js"></script>
