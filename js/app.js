@@ -1,5 +1,7 @@
 // QAZAQ MATH — қосымшаның негізгі логикасы.
 import { Engine, haversine } from './engine3d.js';
+import { installClassroom } from './classroom.js';
+installClassroom(Engine);
 import { CHARACTERS, charSVG } from './actors.js';
 import { BookViewer } from './book.js';
 import { mountSim } from './sims.js';
@@ -18,7 +20,7 @@ const COLORS = ['#c4302b', '#1c4fb0', '#0f8b8d', '#c8963e', '#6b4fe0', '#e0752d'
 const validChar = (id) => CHARACTERS.some(c => c.id === id) ? id : 'tamshy';
 const charFace = (id, color, size = 40) => charSVG(validChar(id), color || '#2aa8ff', size);
 const BOOK_COLORS = ['#16306e', '#7a1e2c', '#0f5f4c'];
-const ROUTES = ['home', 'map', 'lab', 'quests', 'adal', 'idea', 'author', 'cabinet', 'teacher'];
+const ROUTES = ['home', 'map', 'class', 'lab', 'quests', 'adal', 'idea', 'author', 'cabinet', 'teacher'];
 let accounts = null, accountsReady = null, teacherHash = null, tTab = 'online', tSel = null, newCreds = [];
 try { teacherHash = localStorage.getItem('qm_teacher') || null; } catch (e) {}
 const FACTS = [
@@ -59,7 +61,7 @@ async function boot() {
   setInterval(tickSecond, 1000);
   window.__qm = { get engine() { return engine; }, openSim: (id) => openSim(data.places.find(p => p.id === id)), launch3D };
   setInterval(() => pushPresence(), 2000);
-  setInterval(() => { if (inWorld) pushPresence(); }, 350);
+  setInterval(() => { if (inWorld || route === 'class') pushPresence(); }, 350);
 }
 
 // ====================== маршрутизация ======================
@@ -71,10 +73,14 @@ function go(r) {
   route = r; document.body.classList.toggle('on-page', !['home', 'map'].includes(r)); if (r !== 'map') stopVoice();
   $$('.view').forEach(v => { v.hidden = v.dataset.view !== r; });
   $$('.mainnav a').forEach(a => a.classList.toggle('active', a.dataset.nav === r));
+  if (r !== 'class') engine.leaveClass();
+  if (r === 'class' && !Store.me && !teacherHash) { openReg(() => go('class')); location.hash = 'home'; return; }
   if (r === 'home') engine.setMode('home');
+  else if (r === 'class') { engine.enterClass(Store.me || {}, !Store.me); setTimeout(() => onPeers(sync.list()), 100); }
   else if (r === 'map') { if (!Store.me) { openReg(() => go('map')); location.hash = 'home'; return; } engine.setMode('map'); if (!spoken.welcome) { spoken.welcome = 1; say('ui_welcome', data.ui.welcome); } }
   else engine.setMode('page');
   $('#onlinePill').hidden = r !== 'map' && r !== 'teacher';
+  document.body.classList.toggle('in-class', r === 'class');
   if (r === 'quests') renderQuests();
   if (r === 'idea') renderIdea();
   if (r === 'author') renderAuthor();
@@ -89,7 +95,7 @@ function setWhere() {
   const me = Store.me; if (!me) return;
   me.where = inWorld ? `${inWorld.name} әлемінде · ${Store.solved(inWorld.id).length}/3 есеп`
     : route === 'map' ? `Картада · ${engine.mount === 'eagle' ? 'бүркітпен ұшып' : engine.mount === 'orbit' ? 'шолу режимі' : 'атпен'}${nearPlace ? ' · ' + nearPlace.name : ''}`
-    : ({ home: 'Басты бетте', lab: 'Зертханада', quests: 'Тапсырмаларды қарап жүр', idea: 'Педагогикалық идеяны оқып жүр', adal: '«Адал азамат» жағдаяттарын шешіп жүр', author: 'Автор туралы оқып жүр', cabinet: 'Өз кабинетінде', monitor: 'Сынып бөлмесінде' })[route];
+    : ({ home: 'Басты бетте', lab: 'Зертханада', quests: 'Тапсырмаларды қарап жүр', idea: 'Педагогикалық идеяны оқып жүр', class: 'Онлайн сыныпта', adal: '«Адал азамат» жағдаяттарын шешіп жүр', author: 'Автор туралы оқып жүр', cabinet: 'Өз кабинетінде', monitor: 'Сынып бөлмесінде' })[route];
 }
 
 // ====================== UI ======================
@@ -180,6 +186,7 @@ function pushPresence() {
   const p = { sid: me.sid, name: `${me.first} ${me.last}`, cls: me.cls, color: me.color, char: me.char, points: me.points, stars: me.stars, where: me.where, view: inWorld ? 'world' : route };
   if (route === 'map' && !inWorld && engine.mount !== 'orbit') Object.assign(p, engine.presence()); else Object.assign(p, { x: null });
   if (inWorld) Object.assign(p, { world: inWorld.id, mount: engine.wMount }, engine.worldPresence());
+  if (route === 'class' && !inWorld) Object.assign(p, engine.classPresence());
   sync.setPresence(p);
 }
 function onPeers(list) {
@@ -188,6 +195,7 @@ function onPeers(list) {
   engine.setPeers(online.filter(s => s.sid !== meId).map(s => ({ ...s, presence: s.presence })));
   const top = [...list].sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, 5);
   $('#ratingList').innerHTML = top.length ? top.map((s, i) => `<li><span class="rk">${i + 1}</span><span>${esc(s.first)} ${esc((s.last || '')[0] || '')}. <small style="color:var(--muted)">${esc(s.cls || '')}</small></span><span class="pts">${nf(s.points || 0)}</span></li>`).join('') : '<li class="rating-empty">Әзірге ешкім жоқ. Бірінші бол!</li>';
+  if (route === 'class') renderClass(online.filter(s => s.sid !== meId), list);
   if (inWorld) { const here = online.filter(s => s.sid !== meId && s.presence?.view === 'world' && s.presence?.world === inWorld.id); engine.setWorldPeers(here); const wp = $('#wPeers'); wp.hidden = !here.length; wp.innerHTML = here.length ? `<span class="g-lab">Бұл әлемде</span>${here.map(s => `<span class="wp"><i style="background:${esc(s.color || '#0f8b8d')}"></i>${esc(s.first || s.name)} · ${s.presence.wm === 'eagle' ? 'бүркіт' : 'ат'}</span>`).join('')}` : ''; } else $('#wPeers').hidden = true;
   if (route === 'teacher' && teacherHash && tTab !== 'students' && tTab !== 'settings' && Date.now() - (onPeers.t || 0) > 1500) { onPeers.t = Date.now(); renderTeacher(); }
 }
@@ -320,6 +328,21 @@ function openTrailer(p) {
   $('#trTitle').textContent = tr[0]; $('#trKind').textContent = `Бейне-трейлер · ${p.name}`; $('#trGo').textContent = inWorld ? 'Әлемге оралу' : 'Жабу';
   $('#trailerModal').hidden = false; if (!trailer) trailer = new TrailerPlayer($('#trRoot')); trailer.load(p.id);
 }
+// ====================== онлайн сынып ======================
+function whereShort(s) {
+  const q = s.presence || {}; if (q.view === 'world') return 'Порталда: ' + (data.places.find(p => p.id === q.world)?.name || '');
+  return ({ map: 'Картада', class: 'Сыныпта', lab: 'Зертханада', adal: 'Адал азамат', quests: 'Әлемдерді қарап жүр', cabinet: 'Кабинетінде', home: 'Басты бетте', idea: 'Пед. идея', author: 'Автор', teacher: 'Мұғалім' })[q.view] || 'Онлайн';
+}
+function renderClass(others, all) {
+  const me = Store.me;
+  engine.setClassPeers(others.map(s => ({ ...s, whereShort: whereShort(s) })));
+  if (me) engine.setMyClassLabel([`${me.first} (сен) · ${me.points} ұпай`, `★ ${me.stars}`]);
+  const online = all.filter(s => s.online); $('#clCount').textContent = String(Math.max(online.length, me ? 1 : 0));
+  const rows = [...online]; if (me && !rows.some(r => r.sid === me.sid)) rows.push({ ...publicRecord(me), name: `${me.first} ${me.last}`, presence: { view: 'class' } });
+  rows.sort((a, b) => (b.points || 0) - (a.points || 0));
+  $('#clList').innerHTML = rows.map((s, i) => `<li class="${me && s.sid === me.sid ? 'me' : ''}"><span class="rk">${i + 1}</span>${charFace(s.char, s.color, 30)}<span class="cl-n"><b>${esc(s.first || s.name)}${me && s.sid === me.sid ? ' (сен)' : ''}</b><small>${esc(s.cls || '')} · ${esc(me && s.sid === me.sid ? 'Сыныпта' : whereShort(s))}</small></span><span class="pts">${nf(s.points || 0)}</span></li>`).join('') || '<li class="rating-empty">Әзірге ешкім жоқ</li>';
+}
+
 // ====================== QR-код ======================
 const PAGES_URL = 'https://nygmetolla0404-oss.github.io/mathqazaq/';
 function joinURL() {
@@ -510,13 +533,13 @@ function renderTeacher() {
   const tabs = [['online', 'Онлайн сынып'], ['students', 'Оқушылар мен логиндер'], ['stats', 'Статистика'], ['settings', 'Баптаулар']];
   el.innerHTML = `
   <header class="t-head"><div><p class="eyebrow">Мұғалім кабинеті · ${esc(ADMIN_LOGIN)}</p><h2>Сынып бөлмесі</h2></div>
-    <div class="t-head-r"><button class="btn-soft sm" id="tQr" type="button">QR-код (сыныпқа)</button><label class="t-cls">Сынып <select id="tCls"><option value="all">Барлығы</option>${classes.map(c => `<option ${c === tCls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label><button class="btn-soft sm" id="tOut">Шығу</button></div></header>
+    <div class="t-head-r"><button class="btn-primary sm" id="tClass3d" type="button">3D онлайн сынып</button><button class="btn-soft sm" id="tQr" type="button">QR-код (сыныпқа)</button><label class="t-cls">Сынып <select id="tCls"><option value="all">Барлығы</option>${classes.map(c => `<option ${c === tCls ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label><button class="btn-soft sm" id="tOut">Шығу</button></div></header>
   <div class="t-kpis"><div><b>${online.length}</b><span>қазір онлайн</span></div><div><b>${rows.length}</b><span>оқушы</span></div><div><b>${online.filter(s => s.presence?.view === 'map').length}</b><span>картада</span></div><div><b>${online.filter(s => s.presence?.view === 'world').length}</b><span>порталда</span></div><div><b>${rows.length ? nf(rows.reduce((a, s) => a + (s.points || 0), 0) / rows.length) : 0}</b><span>орташа ұпай</span></div></div>
   <nav class="t-tabs">${tabs.map(([k, n]) => `<button type="button" data-tt="${k}" class="${tTab === k ? 'on' : ''}">${n}</button>`).join('')}</nav>
   <div id="tBody"></div>
   <p class="note" style="margin-top:18px">${mode === 'server' ? 'Сынып желісі режимі: деректер мұғалім компьютеріндегі «data» бумасында сақталады.' : mode === 'artifact' ? 'Онлайн бөлме режимі: деректер осы беттің ортақ базасында сақталады.' : 'Бір құрылғы режимі: тек осы браузердегі деректер көрінеді. Бүкіл сынып үшін «server.py» іске қосыңыз.'}</p>`;
   $('#tCls').onchange = (e) => { tCls = e.target.value; renderTeacher(); };
-  $('#tQr').onclick = () => window.__showQR?.();
+  $('#tQr').onclick = () => window.__showQR?.(); $('#tClass3d').onclick = () => { location.hash = 'class'; };
   $('#tOut').onclick = () => { teacherHash = null; tAccs = null; try { localStorage.removeItem('qm_teacher'); } catch (e) {} renderTeacher(); };
   $$('[data-tt]', el).forEach(b => b.onclick = () => { tTab = b.dataset.tt; if (tTab === 'students') tAccs = null; renderTeacher(); });
   const body = $('#tBody');

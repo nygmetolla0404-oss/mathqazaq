@@ -390,7 +390,7 @@ export class Engine {
     const w = this.W, h = this.H; const cam = this.camera.position; const sceneKey = this.mode === 'world' ? 'world' : 'map';
     const near = this.mode === 'map' && this.mount !== 'orbit';
     for (const l of this.labels) {
-      if (l.scene !== sceneKey || this.paused || this.mode === 'home') { if (l.vis !== false) { l.el.style.display = 'none'; l.vis = false; } continue; }
+      if (l.scene !== sceneKey || this.paused || this.mode === 'home' || this.mode === 'class') { if (l.vis !== false) { l.el.style.display = 'none'; l.vis = false; } continue; }
       const d = cam.distanceTo(l.v); const v = l.v.clone().project(this.camera);
       const maxD = l.kind === 'city' ? (near ? 45 : 170) : l.kind === 'peer' ? 80 : (near ? 70 : 400);
       const show = v.z < 1 && v.x > -1.1 && v.x < 1.1 && v.y > -1.1 && v.y < 1.1 && d < maxD;
@@ -447,7 +447,7 @@ export class Engine {
       const end = () => { id = null; knob.style.transform = ''; this.joy = { x: 0, y: 0 }; };
       pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
     };
-    joy('joy', 'knob'); joy('joy2', 'knob2');
+    joy('joy', 'knob'); joy('joy2', 'knob2'); joy('joy3', 'knob3');
     const hold = (id, k) => { const b = document.getElementById(id); if (!b) return; b.addEventListener('pointerdown', () => { this.btn[k] = true; }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => { this.btn[k] = false; })); };
     hold('tUp', 'up'); hold('tDown', 'down');
     ['tE', 'tE2'].forEach(id => document.getElementById(id)?.addEventListener('click', () => this.cb.onAction?.()));
@@ -481,6 +481,7 @@ export class Engine {
       this.updatePeers(dt);
       if (this.playerGroup) { const P = this.player; this.sun.position.set(P.x - 40, 80, P.z + 30); this.sun.target.position.set(P.x, 0, P.z); if (this.mode === 'home') { this.sun.position.set(-50, 90, 40); this.sun.target.position.set(0, 0, 0); } }
     } else if (this.world) this.updateWorld(dt);
+    else if (this.classScene && this.scene === this.classScene) this.updateClass(dt);
     this.renderer.render(this.scene, this.camera);
     this.updateLabels();
   }
